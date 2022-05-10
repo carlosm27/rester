@@ -1,12 +1,7 @@
 package services
 
 import (
-	"encoding/json"
 	"fmt"
-	"strings"
-
-	//"io/ioutil"
-	//"strconv"
 
 	"log"
 	"net/http"
@@ -48,7 +43,7 @@ func GetRequest(c *gin.Context) {
 	}
 
 	if err := db.Where("id= ?", c.Param("id")).First(&request).Error; err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "URI not found"})
+		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
 	fmt.Println(request)
@@ -71,28 +66,15 @@ func PostRequest(c *gin.Context) {
 		log.Println(err)
 	}
 
-	var resp map[string]interface{}
-	err = json.Unmarshal(response.Body(), &resp)
-	if err != nil {
-		fmt.Printf("Error: %s", err.Error())
-	}
-
-	jsonResp, err := json.Marshal(resp)
-	if err != nil {
-		fmt.Printf("Error: %s", err.Error())
-	}
-
-	res := strings.ReplaceAll(string(jsonResp), "\"", "")
-
-	request := models.Requests{Uri: newRequest.Uri, Response: res}
+	request := models.Requests{Uri: newRequest.Uri, Response: response.Body()}
 
 	db, err := models.Database()
 	if err != nil {
 		log.Println(err)
 	}
 
-	if err := db.Create(&request); err != nil {
-		log.Println(err)
+	if err := db.Create(&request).Error; err != nil {
+		log.Println(err.Error())
 	}
 
 	fmt.Println(request)
